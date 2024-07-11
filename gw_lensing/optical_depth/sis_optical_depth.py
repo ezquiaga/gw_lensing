@@ -1,4 +1,6 @@
 import numpy as np
+from scipy.special import gamma
+
 from astropy.cosmology import Planck18 as cosmo
 h0 = cosmo.H(0).value/100
 from colossus.cosmology import cosmology
@@ -29,6 +31,25 @@ def tau(z_S,log10Mmin,log10Mmax,nMs,nzs):
     zs = np.logspace(-3,np.log10(z_S),nzs)
     return trapezoid(dtaudz(zs,z_S,log10Mmin,log10Mmax,nMs),zs)
 tau = np.vectorize(tau)
+
+#SIS with Schechter Mass Function
+def dtau_Schechterdz(zS,zL,n,sigmaS,alpha,beta):
+    #sigmaS km/s
+    #n in #/Mpc^3
+    c_km = Clight/1000
+    Hz = cosmo.H(zL).value #Km/Mpc /s
+    DL = cosmo.angular_diameter_distance(zL).value #Mpc
+    DS = cosmo.angular_diameter_distance(zS).value #Mpc
+    DLS = cosmo.angular_diameter_distance_z1z2(zL,zS).value #Mpc
+    
+    factor = 16 * np.power(np.pi,3)
+    
+    return factor*np.power(1+zL,2)*(c_km*n/Hz)*np.power(DL*DLS/DS,2)*np.power(sigmaS/c_km,4)*gamma((4+alpha)/beta)/gamma(alpha/beta)
+    
+def tau_Schechter(zS,n,sigmaS,alpha,beta):
+    zLs = np.logspace(min(-3,np.log10(zS/100)),np.log10(zS),100)
+    return trapezoid(dtau_Schechterdz(zS,zLs,n,sigmaS,alpha,beta),zLs)
+tau_Schechter = np.vectorize(tau_Schechter)
 
 """High magnification optical depth"""
 def d2taudzdlnM_mu(M,z_L,z_S,mu0):
