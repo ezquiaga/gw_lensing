@@ -3,6 +3,28 @@ from astropy.cosmology import Planck18 as cosmo
 
 from ..utils.constants import *
 
+"""Image properties"""
+#Magnification
+def mu_plus(y):
+    """Magnification for the positive image
+    
+    Parameters
+    ----------
+    y : float
+        modulus of dimensionless source position
+    """
+
+    return 1 + 1./y
+def mu_minus(y):
+    """Magnification for the negative image
+
+    Parameters
+    ----------
+    y : float
+        modulus of dimensionless source position
+    """
+    return 1 - 1./y
+
 """Velocity dispersion"""
 def sigma_v(M,z): #m/s
     #M200 in Msun
@@ -20,6 +42,13 @@ def theta_E(sigma,z_L,z_S):
     return 4*np.pi* np.power(sigma / Clight,2.) * DLS / DS #rad
 
 """Cross section"""
+#Multiple image cross-section: area where there are 2 images determined theta < theta_E
+def sigma_two(M,z_L,z_S): #cross section
+    sigma = sigma_v(M,z_L) #velocity dispersion
+    return np.pi * theta_E(sigma,z_L,z_S)**2
+
+
+#Magnification cross section: mu > mu0
 def sigma_mu(M,z_L,z_S,mu0): #cross section
     sigma = sigma_v(M,z_L) #velocity dispersion
     return 2. * np.pi * np.power(theta_E(sigma,z_L,z_S),2.) * (mu0**2 + 1) / np.power((mu0**2 - 1),2.)
