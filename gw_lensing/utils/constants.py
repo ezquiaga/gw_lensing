@@ -7,3 +7,5 @@ TSUN    = 4.92549232189886339689643862e-6 # mass of sun in seconds (G=C=1)
 PC     = 3.08568025e16     # Parsec in meters
 KPC     = 3.08568025e19     # kilo-Parsec in meters
 MPC     = 3.08568025e22 # mega-Parsec in meters
+Gnewton = 6.674*1e-11 #m3⋅kg−1⋅s−2.
+MSUN = 1.98847e30 #kg
