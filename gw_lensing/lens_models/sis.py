@@ -1,0 +1,25 @@
+import numpy as np
+from astropy.cosmology import Planck18 as cosmo
+
+from ..utils.constants import *
+
+"""Velocity dispersion"""
+def sigma_v(M,z): #m/s
+    #M200 in Msun
+    rho_c_g_cm3 = cosmo.critical_density(z).value# g/cm^3
+    rho_c = rho_c_g_cm3*1e-3*1e6 # kg/m^3
+    rho_200 = 200*rho_c
+    return np.power(np.sqrt(np.pi*np.power(Gnewton,3)*rho_200/6)*M*MSUN,1./3)
+
+"""Einstein radius"""
+def theta_E(sigma,z_L,z_S):
+    #sigma in m/s
+    #Clight in m/s
+    DS = cosmo.angular_diameter_distance(z_S).value #Mpc
+    DLS = cosmo.angular_diameter_distance_z1z2(z_L,z_S).value #Mpc
+    return 4*np.pi* np.power(sigma / Clight,2.) * DLS / DS #rad
+
+"""Cross section"""
+def sigma_mu(M,z_L,z_S,mu0): #cross section
+    sigma = sigma_v(M,z_L) #velocity dispersion
+    return 2. * np.pi * np.power(theta_E(sigma,z_L,z_S),2.) * (mu0**2 + 1) / np.power((mu0**2 - 1),2.)
