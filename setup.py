@@ -17,6 +17,7 @@ setuptools.setup(
         "gw_lensing.gw_rates",
         "gw_lensing.lens_models",
         "gw_lensing.lens_population",
+        "gw_lensing.lensing_rates",
         "gw_lensing.optical_depth",
         "gw_lensing.utils",
         'gw_lensing.detectors.pw_network',
