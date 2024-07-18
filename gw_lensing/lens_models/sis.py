@@ -2,6 +2,7 @@ import numpy as np
 from astropy.cosmology import Planck18 as cosmo
 
 from ..utils.constants import *
+from ..utils import lensutils
 
 """Image properties"""
 #Magnification
@@ -24,6 +25,35 @@ def mu_minus(y):
         modulus of dimensionless source position
     """
     return 1 - 1./y
+
+#Time delay
+def T_plus(y):
+    """Time delay for the positive image
+
+    Parameters
+    ----------
+    y : float
+        modulus of dimensionless source position
+    """
+    return -1./2 - y
+def T_minus(y):
+    """Time delay for the negative image
+
+    Parameters
+    ----------
+    y : float
+        modulus of dimensionless source position
+    """
+    return -1./2 + y
+def DeltaT(y):
+    """Time delay difference between the two images
+
+    Parameters
+    ----------
+    y : float
+        modulus of dimensionless source position
+    """
+    return 2*y
 
 """Velocity dispersion"""
 def sigma_v(M,z): #m/s
@@ -52,3 +82,21 @@ def sigma_two(M,z_L,z_S): #cross section
 def sigma_mu(M,z_L,z_S,mu0): #cross section
     sigma = sigma_v(M,z_L) #velocity dispersion
     return 2. * np.pi * np.power(theta_E(sigma,z_L,z_S),2.) * (mu0**2 + 1) / np.power((mu0**2 - 1),2.)
+
+"""Time delay"""
+def t_delay(y,ML,zL,zS): 
+    """Time delay in years
+    
+    Parameters
+    ----------
+    y : float
+        modulus of dimensionless source position
+    ML : float
+        lens mass in solar masses
+    zL : float
+        redshift of the lens
+    zS : float
+        redshift of the source
+    """
+    sigma = sigma_v(ML,zL)
+    return lensutils.t_distance(zL,zS)*DeltaT(y)*theta_E(sigma,zL,zS)**2 / YEAR
