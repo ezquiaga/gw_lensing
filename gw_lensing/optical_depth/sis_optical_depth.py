@@ -20,6 +20,7 @@ def d2taudzdlnM(M,z_L,z_S):
     dVcdzdOm = cosmo.differential_comoving_volume(z_L).value
     dndlnM = (h0**3)*mass_function.massFunction(M, z_L, mdef = '200c', model = 'tinker08',q_out = 'dndlnM')
     return dVcdzdOm * dndlnM * sigma_two(M,z_L,z_S)
+vd2taudzdlnM = np.vectorize(d2taudzdlnM)
 
 def dtaudz(z_L,z_S,log10Mmin,log10Mmax,nMs):
     Ms = np.logspace(log10Mmin,log10Mmax,nMs)
@@ -69,3 +70,31 @@ def tau_mu(z_S,mu0,log10Mmin,log10Mmax,nMs,nzs):
     zLs = np.logspace(-3,np.log10(z_S),nzs)
     return trapezoid(dtaudz_mu(zLs,z_S,mu0,log10Mmin,log10Mmax,nMs),zLs)
 tau_mu = np.vectorize(tau_mu)
+
+"""Optical depth with timde delay selection function"""
+
+def d2tau_Dt_dzdlnM(ML,z_L,z_S,t,Tobs,y):
+    #hmf in Mpc^-3
+    #dVc/dzdOmega in Mpc^3/sr
+    dVcdzdOm = cosmo.differential_comoving_volume(z_L).value
+    dndlnM = (h0**3)*mass_function.massFunction(ML, z_L, mdef = '200c', model = 'tinker08',q_out = 'dndlnM')
+
+    #time delay selection
+    dt = t_delay(y,ML,z_L,z_S)
+    time_available = Tobs - t
+    pdet_dt = np.heaviside(time_available - dt,1)
+
+    return dVcdzdOm * dndlnM * sigma_two(ML,z_L,z_S) * pdet_dt
+vd2tau_Dt_dzdlnM = np.vectorize(d2tau_Dt_dzdlnM)
+
+def dtau_Dt_dz(z_L,z_S,t,Tobs,y,log10Mmin,log10Mmax,nMs):
+    Ms = np.logspace(log10Mmin,log10Mmax,nMs)
+    return trapezoid(d2tau_Dt_dzdlnM(Ms,z_L,z_S,t,Tobs,y),np.log(Ms))
+dtau_Dt_dz = np.vectorize(dtau_Dt_dz)
+
+def tau_Dt(z_S,t,Tobs,y,log10Mmin,log10Mmax,nMs,nzLs):
+    #zs = np.linspace(0.,z_S,nzs)
+    zLs_plus_one = np.logspace(-3,np.log10(z_S),nzLs+1)
+    zLs = zLs_plus_one[:-1]
+    return trapezoid(dtau_Dt_dz(zLs,z_S,t,Tobs,y,log10Mmin,log10Mmax,nMs),zLs)
+tau_Dt = np.vectorize(tau_Dt)
