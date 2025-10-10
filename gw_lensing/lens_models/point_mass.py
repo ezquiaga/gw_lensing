@@ -1,6 +1,7 @@
 "Python module with lensing function for a point mass"
 import numpy as np
 import mpmath as mp
+from astropy.cosmology import Planck18 as cosmo
 from scipy.special import gamma, hyp1f1
 from scipy.interpolate import interp1d
 from ..utils.constants import *
@@ -19,6 +20,18 @@ def t_delay_geom_minus(y):
 def DeltaT(y):
     return t_delay_geom_minus(y)-t_delay_geom_plus(y)
 
+def t_ref(M_L,z_L):
+    """Reference time delay for a point mass lens
+    
+    Parameters
+    ----------
+    M_L : float
+        Lens mass in solar masses
+    z_L : float
+        Lens redshift
+    """
+    return 4 * (1+z_L)* Gnewton * M_L*MSUN / (Clight**3) /YEAR
+
 "Angular position"
 def theta_plus(b):
     return 0.5*b*(1.+np.sqrt(1.+4./b**2.))
@@ -30,6 +43,17 @@ def mu_plus(y):
     return 0.5 + (y**2. + 2.)/(2.*y*np.sqrt(y**2 + 4.))
 def mu_minus(y):
     return 0.5 - (y**2. + 2.)/(2.*y*np.sqrt(y**2 + 4.))
+
+"""Einstein radius"""
+def theta_E(M_L,z_L,z_S):
+    #M in solar masses
+    #Clight in m/s
+    DL = cosmo.angular_diameter_distance(z_L).value #Mpc
+    DS = cosmo.angular_diameter_distance(z_S).value #Mpc
+    DLS = cosmo.angular_diameter_distance_z1z2(z_L,z_S).value #Mpc
+    
+    thetaE2 = 4 * Gnewton * (1 + z_L)* M_L * MSUN / (Clight**2) * DLS / (DL * DS * MPC) #rad^2
+    return np.sqrt(thetaE2) #rad
 
 "Diffraction integral"
 #Amplification function

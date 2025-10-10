@@ -48,6 +48,7 @@ __pycache__/
 # Output files #
 ################
 *.out
+*.pdf
 slurm_output/
 
 # Ignore files #

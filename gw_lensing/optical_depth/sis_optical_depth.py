@@ -14,23 +14,30 @@ from ..lens_models.sis import *
 
 
 """Multiple image optical depth"""
-def d2taudzdlnM(M,z_L,z_S):
+def d2tau_dzdlnM(M,z_L,z_S):
     #hmf in Mpc^-3
     #dVc/dzdOmega in Mpc^3/sr
     dVcdzdOm = cosmo.differential_comoving_volume(z_L).value
     dndlnM = (h0**3)*mass_function.massFunction(M, z_L, mdef = '200c', model = 'tinker08',q_out = 'dndlnM')
     return dVcdzdOm * dndlnM * sigma_two(M,z_L,z_S)
-vd2taudzdlnM = np.vectorize(d2taudzdlnM)
+vd2tau_dzdlnM = np.vectorize(d2tau_dzdlnM)
 
-def dtaudz(z_L,z_S,log10Mmin,log10Mmax,nMs):
+def dtau_dz(z_L,z_S,log10Mmin,log10Mmax,nMs):
     Ms = np.logspace(log10Mmin,log10Mmax,nMs)
-    return trapezoid(d2taudzdlnM(Ms,z_L,z_S),np.log(Ms))
-dtaudz = np.vectorize(dtaudz)
+    return trapezoid(d2tau_dzdlnM(Ms,z_L,z_S),np.log(Ms))
+dtau_dz = np.vectorize(dtau_dz)
+
+def dtau_dlnM(ML,z_S,nzs):
+    zLs = np.logspace(-3,np.log10(z_S),nzs)
+    zLs[-1] = z_S
+    return trapezoid(vd2tau_dzdlnM(ML,zLs,z_S),zLs)
+dtau_dlnM = np.vectorize(dtau_dlnM)
 
 def tau(z_S,log10Mmin,log10Mmax,nMs,nzs):
     #zs = np.linspace(0.,z_S,nzs)
     zs = np.logspace(-3,np.log10(z_S),nzs)
-    return trapezoid(dtaudz(zs,z_S,log10Mmin,log10Mmax,nMs),zs)
+    zs[-1] = z_S
+    return trapezoid(dtau_dz(zs,z_S,log10Mmin,log10Mmax,nMs),zs)
 tau = np.vectorize(tau)
 
 #SIS with Schechter Mass Function
@@ -94,7 +101,28 @@ dtau_Dt_dz = np.vectorize(dtau_Dt_dz)
 
 def tau_Dt(z_S,t,Tobs,y,log10Mmin,log10Mmax,nMs,nzLs):
     #zs = np.linspace(0.,z_S,nzs)
-    zLs_plus_one = np.logspace(-3,np.log10(z_S),nzLs+1)
-    zLs = zLs_plus_one[:-1]
+    #zLs_plus_one = np.logspace(-3,np.log10(z_S),nzLs+1)
+    #zLs = zLs_plus_one[:-1]
+    zLs = np.logspace(-3,np.log10(z_S-1.0e-10),nzLs)
     return trapezoid(dtau_Dt_dz(zLs,z_S,t,Tobs,y,log10Mmin,log10Mmax,nMs),zLs)
 tau_Dt = np.vectorize(tau_Dt)
+
+"""Time delay optical depth"""
+def d3tau_dDtdzdlnM(Dt,M,z_L,z_S):
+    #hmf in Mpc^-3
+    #dVc/dzdOmega in Mpc^3/sr
+    dVcdzdOm = cosmo.differential_comoving_volume(z_L).value
+    dndlnM = (h0**3)*mass_function.massFunction(M, z_L, mdef = '200c', model = 'tinker08',q_out = 'dndlnM')
+    return dVcdzdOm * dndlnM * sigma_two(M,z_L,z_S) * np.heaviside(t_ref(M,z_L,z_S)-Dt,1.)/t_ref(M,z_L,z_S)
+vd3tau_dDtdzdlnM = np.vectorize(d3tau_dDtdzdlnM)
+
+def d2tau_dDtdz(Dt,z_L,z_S,log10Mmin,log10Mmax,nMs):
+    Ms = np.logspace(log10Mmin,log10Mmax,nMs)
+    return trapezoid(d3tau_dDtdzdlnM(Dt,Ms,z_L,z_S),np.log(Ms))
+d2tau_dDtdz = np.vectorize(d2tau_dDtdz)
+
+def dtau_dDt(Dt,z_S,log10Mmin,log10Mmax,nMs,nzs):
+    #zs = np.linspace(0.,z_S,nzs)
+    zs = np.logspace(-3,np.log10(z_S-1e-10),nzs)
+    return trapezoid(d2tau_dDtdz(Dt,zs,z_S,log10Mmin,log10Mmax,nMs),zs)
+dtau_dDt = np.vectorize(dtau_dDt)

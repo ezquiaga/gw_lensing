@@ -84,6 +84,21 @@ def sigma_mu(M,z_L,z_S,mu0): #cross section
     return 2. * np.pi * np.power(theta_E(sigma,z_L,z_S),2.) * (mu0**2 + 1) / np.power((mu0**2 - 1),2.)
 
 """Time delay"""
+def t_ref(ML,zL,zS): 
+    """Reference time delay in years
+    
+    Parameters
+    ----------
+    ML : float
+        lens mass in solar masses
+    zL : float
+        redshift of the lens
+    zS : float
+        redshift of the source
+    """
+    sigma = sigma_v(ML,zL)
+    return lensutils.t_distance(zL,zS)*theta_E(sigma,zL,zS)**2 / YEAR
+
 def t_delay(y,ML,zL,zS): 
     """Time delay in years
     
@@ -98,5 +113,36 @@ def t_delay(y,ML,zL,zS):
     zS : float
         redshift of the source
     """
-    sigma = sigma_v(ML,zL)
-    return lensutils.t_distance(zL,zS)*DeltaT(y)*theta_E(sigma,zL,zS)**2 / YEAR
+    return DeltaT(y) * t_ref(ML,zL,zS)
+
+def mu_plus_Dt(Dt,ML,zL,zS):
+    """Magnification for the positive image given a time delay
+    
+    Parameters
+    ----------
+    Dt : float
+        time delay in years
+    ML : float
+        lens mass in solar masses
+    zL : float
+        redshift of the lens
+    zS : float
+        redshift of the source
+    """
+    return 1 + 2. * t_ref(ML,zL,zS) / Dt
+
+def mu_minus_Dt(Dt,ML,zL,zS):
+    """Magnification for the negative image given a time delay
+    
+    Parameters
+    ----------
+    Dt : float
+        time delay in years
+    ML : float
+        lens mass in solar masses
+    zL : float
+        redshift of the lens
+    zS : float
+        redshift of the source
+    """
+    return 1 - 2. * t_ref(ML,zL,zS) / Dt

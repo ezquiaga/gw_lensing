@@ -110,6 +110,13 @@ def rate_z(z,zp,alpha,beta):
     den = 1. + ((1.+z)/(1.+zp))**(alpha+beta)
     return c0 * num / den
 
+def rate_z_norm_0p2(z,zp,alpha,beta):
+    num = (1.+z)**alpha
+    den = 1. + ((1.+z)/(1.+zp))**(alpha+beta)
+    num_0p2 = (1.+0.2)**alpha
+    den_0p2 = 1. + ((1.+0.2)/(1.+zp))**(alpha+beta)
+    return (den_0p2 / num_0p2) * num / den
+
 """ Toy models """
 
 def box_smooth(x,edge,width,filt):

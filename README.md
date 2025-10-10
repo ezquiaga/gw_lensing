@@ -1,5 +1,8 @@
-# gw_lensing
-A python package to explore gravitational lensing of gravitational waves.
+# `gw_lensing`
+A python package to explore gravitational lensing of gravitational waves. 
+The code includes functions to compute the strong lensing optical depth, the rate of lensed events, and the magnification bias for different lens models. 
+
+Examples of usage are provided in the `examples` folder.
 
 ## Installation
 
