@@ -55,8 +55,8 @@ def dtau_Schechterdz(zS,zL,n,sigmaS,alpha,beta):
     return factor*np.power(1+zL,2)*(c_km*n/Hz)*np.power(DL*DLS/DS,2)*np.power(sigmaS/c_km,4)*gamma((4+alpha)/beta)/gamma(alpha/beta)
     
 def tau_Schechter(zS,n,sigmaS,alpha,beta):
-    zLs = np.logspace(min(-3,np.log10(zS/100)),np.log10(zS),100)
-    return trapezoid(dtau_Schechterdz(zS,zLs,n,sigmaS,alpha,beta),zLs)
+    zLs = np.logspace(min(-3,np.log10(zS/100)),np.log10(zS),101)
+    return trapezoid(dtau_Schechterdz(zS,zLs[:-1],n,sigmaS,alpha,beta),zLs[:-1])
 tau_Schechter = np.vectorize(tau_Schechter)
 
 """High magnification optical depth"""
