@@ -5,6 +5,7 @@ from ..cosmology import gwcosmo
 from ..utils import gwutils
 from ..detectors import sensitivity_curves as sc
 from ..gw_rates.rates import dNcbc_dz
+from ..gw_rates import rates as gwrates
 
 from ..optical_depth import sis_optical_depth as sistau
 from ..lens_models import sis
@@ -198,3 +199,42 @@ def Ndet_lens_mu_Dt(pz,pm1,pm2,R0,norm_m1,H0,Om0,Tobs,snr_th,detectorSn,fmin_det
     dn_detec = vdNdet_lens_mu_Dt_dt(ts,pz,pm1,pm2,R0,norm_m1,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,log10Mmin,log10Mmax,nMs,nzLs,mu_image,nys,mmin,mmax,n_m1,n_m2,zmin,zmax,n_z)
     return trapz(dn_detec,ts)
 
+""" Monte Carlo integration """
+
+def dNdet_MC_lens_mu_dz(z,N_mc,pz,pm1,pq,R0,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,tau_int,mu_image,zmin,zmax,mmin,mmax):
+    #rate in yr^-1 Gpc^-3
+    #f in *detector* frame
+    #M in *source* frame
+    #Tobs in *detector* frame
+    
+    cdf_z, cdf_m1, cdf_q, norm_z, norm_m1, norm_q, zs_cdf, masses_cdf, qs_cdf = gwrates.compute_cdf(pz,pm1,pq,R0,H0,Om0,Tobs,zmin,zmax,mmin,mmax)
+
+    #Note: the samples in z are actually not needed in this implementation
+    m1_mock, m2_mock, z_mock, y_mock = gwrates.mock_source_parameters(N_mc,cdf_z,cdf_m1,cdf_q,zs_cdf,masses_cdf,qs_cdf)
+
+    dL = gwcosmo.dL_approx(z,H0,Om0)
+    mass_1z = m1_mock*(1.+z)
+    mass_2z = m2_mock*(1.+z)
+
+
+    fmin_gw = fmin_detect # gwutils.f_ini(Tobs,Mc*(1.+z))
+    snr_opt = gwutils.vsnr_from_psd(mass_1z,mass_2z,dL,fmin_gw,Tobs,detectorSn,fmin_detect,fmax_detect,based)
+    snr_opt_mu = snr_opt * np.sqrt(abs(mu_image(y_mock)))
+    pw = sc.pw_hl(snr_th/snr_opt_mu)
+
+    #We make a Monte Carlo integral for all variable but the redshift
+    integrand = gwrates.dNcbc_dz(z,pz,R0,H0,Om0,Tobs) * pw * tau_int(z)
+    mean_integrand = np.sum(integrand)/N_mc
+
+    mean_integrand_square = np.sum(integrand**2)/N_mc
+    error_std = np.sqrt((mean_integrand_square-mean_integrand**2)/N_mc)
+
+    return mean_integrand, error_std
+
+vdNdet_MC_lens_mu_dz = np.vectorize(dNdet_MC_lens_mu_dz)
+
+def Ndet_MC_lens_mu(N_mc,pz,pm1,pq,R0,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,tau,mu_image,zmin,zmax,mmin,mmax,n_z):
+
+    zs = np.logspace(np.log10(zmin),np.log10(zmax),n_z)
+    dn_detec, dn_error = vdNdet_MC_lens_mu_dz(zs,N_mc,pz,pm1,pq,R0,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,tau,mu_image,zmin,zmax,mmin,mmax)
+    return trapz(dn_detec,zs), trapz(dn_error,zs)
