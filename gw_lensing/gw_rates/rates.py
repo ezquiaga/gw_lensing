@@ -96,6 +96,21 @@ def mock_source_parameters(n_sources,cdf_z,cdf_m1,cdf_q,zs,masses,qs):
 
     return m1_mock, m2_mock, z_mock, y_mock
 
+def mock_detector_frame_parameters(n_sources,cdf_z,cdf_m1,cdf_q,zs,masses,qs,H0,Om0):
+
+    z_mock = utils.inverse_transf_sampling(cdf_z,zs,n_sources)
+    m1_mock = utils.inverse_transf_sampling(cdf_m1,masses,n_sources)
+    q_mock = utils.inverse_transf_sampling(cdf_q,qs,n_sources)
+    m2_mock = m1_mock * q_mock
+
+    y_mock = np.random.uniform(0,1,n_sources) #dimensionless source position
+
+    dL_mock = gwcosmo.dL_approx(z_mock,H0,Om0)
+
+    m1z_mock = (1 + z_mock) * m1_mock
+    m2z_mock = (1 + z_mock) * m2_mock
+    return m1z_mock, m2z_mock, dL_mock, y_mock
+
 """ Monte Carlo integration for rates """
 
 def dNdet_MC_dz(z,N_mc,pz,pm1,pq,R0,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,zmin,zmax,mmin,mmax):
