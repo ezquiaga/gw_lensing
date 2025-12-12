@@ -43,6 +43,7 @@ data_mock_catalogues/
 data_injections/
 examples/plots/
 examples/scripts/
+examples/old_notebooks/
 __pycache__/
 
 # Output files #
