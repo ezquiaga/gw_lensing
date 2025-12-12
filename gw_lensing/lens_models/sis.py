@@ -77,6 +77,9 @@ def sigma_two(M,z_L,z_S): #cross section
     sigma = sigma_v(M,z_L) #velocity dispersion
     return np.pi * theta_E(sigma,z_L,z_S)**2
 
+def sigma_two_velocity(sigma,z_L,z_S): #cross section
+    return np.pi * theta_E(sigma,z_L,z_S)**2
+
 
 #Magnification cross section: mu > mu0
 def sigma_mu(M,z_L,z_S,mu0): #cross section

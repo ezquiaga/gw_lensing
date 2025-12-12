@@ -40,6 +40,18 @@ def tau(z_S,log10Mmin,log10Mmax,nMs,nzs):
     return trapezoid(dtau_dz(zs,z_S,log10Mmin,log10Mmax,nMs),zs)
 tau = np.vectorize(tau)
 
+#Optical depth for single lens
+"""Multiple image optical depth"""
+def dtau_singlelens_dz(sigma,z_L,z_S):
+    #sigma in m/s
+    dOm = 4*np.pi
+    return sigma_two_velocity(sigma,z_L,z_S)/dOm
+
+def tau_singlelens(z_S,sigma,z_L):
+    #zs = np.linspace(zL,z_S,nzs)
+    return dtau_singlelens_dz(sigma,z_L,z_S)#trapezoid(dtau_dz(sigma,zs,z_S),zs)
+tau_singlelens = np.vectorize(tau_singlelens)
+
 #SIS with Schechter Mass Function
 def dtau_Schechterdz(zS,zL,n,sigmaS,alpha,beta):
     #sigmaS km/s

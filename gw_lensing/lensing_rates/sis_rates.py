@@ -238,3 +238,89 @@ def Ndet_MC_lens_mu(N_mc,pz,pm1,pq,R0,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,
     zs = np.logspace(np.log10(zmin),np.log10(zmax),n_z)
     dn_detec, dn_error = vdNdet_MC_lens_mu_dz(zs,N_mc,pz,pm1,pq,R0,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,tau,mu_image,zmin,zmax,mmin,mmax)
     return trapz(dn_detec,zs), trapz(dn_error,zs)
+
+""" Rates behind a lens at zL """
+
+def d4Ndet_behindlens_mu_dzdm1dm2dy(z,mass_1,mass_2,y,pz,pm1,pm2,R0,norm_m1,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,sigma,zL,mu_image):
+    #rate in yr^-1 Gpc^-3
+    #f in *detector* frame
+    #M in *source* frame
+    #Tobs in *detector* frame
+    Mc = gwutils.mchirp(mass_1,mass_2) #source frame masses
+    dL = gwcosmo.dL_approx(z,H0,Om0)
+    fmin_gw = fmin_detect # gwutils.f_ini(Tobs,Mc*(1.+z))
+    mass_1z = mass_1*(1.+z)
+    mass_2z = mass_2*(1.+z)
+    snr_opt = gwutils.vsnr_from_psd(mass_1z,mass_2z,dL,fmin_gw,Tobs,detectorSn,fmin_detect,fmax_detect,based)
+    snr_opt_mu = snr_opt * np.sqrt(abs(mu_image(y)))
+    pw = sc.pw_hl(snr_th/snr_opt_mu)
+
+    pm = norm_m1 * pm1(mass_1) * pm2(mass_2,mass_1)
+    integrand = dNcbc_dz(z,pz,R0,H0,Om0,Tobs) * pm * pw * sistau.tau_singlelens(z,sigma,zL)
+    return integrand
+vd4Ndet_behindlens_mu_dzdm1dm2dy = np.vectorize(d4Ndet_behindlens_mu_dzdm1dm2dy)
+
+def d3Ndet_behindlens_mu_dzdm1dm2(z,mass_1,mass_2,pz,pm1,pq,R0,norm_m1,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,sigma,zL,mu_image,nys):
+    # Mass in Msun at *source* frame
+    eps = 1e-10
+    ys = np.linspace(0.+eps,1.-eps,nys)
+    dn_detec = d4Ndet_behindlens_mu_dzdm1dm2dy(z,mass_1,mass_2,ys,pz,pm1,pq,R0,norm_m1,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,sigma,zL,mu_image)
+    return trapz(dn_detec,ys)
+vd3Ndet_behindlens_mu_dzdm1dm2 = np.vectorize(d3Ndet_behindlens_mu_dzdm1dm2)
+
+def d2Ndet_behindlens_mu_dzdm1(z,mass_1,pz,pm1,pq,R0,norm_m1,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,sigma,zL,mu_image,nys,mmin,n_m2):
+    # Mass in Msun at *source* frame
+    mass_2s = np.linspace(mmin,mass_1,n_m2)
+    dn_detec = vd3Ndet_behindlens_mu_dzdm1dm2(z,mass_1,mass_2s,pz,pm1,pq,R0,norm_m1,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,sigma,zL,mu_image,nys)
+    return trapz(dn_detec,mass_2s)
+vd2Ndet_behindlens_mu_dzdm1 = np.vectorize(d2Ndet_behindlens_mu_dzdm1)
+
+def dNdet_behindlens_mu_dz(z,pz,pm1,pq,R0,norm_m1,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,sigma,zL,mu_image,nys,mmin,mmax,n_m1,n_m2):
+    # Mass in Msun at *source* frame
+    mass_1s = np.linspace(mmin,mmax,n_m1)
+    dn_detec = vd2Ndet_behindlens_mu_dzdm1(z,mass_1s,pz,pm1,pq,R0,norm_m1,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,sigma,zL,mu_image,nys,mmin,n_m2)
+    return trapz(dn_detec,mass_1s)
+vdNdet_behindlens_mu_dz = np.vectorize(dNdet_behindlens_mu_dz)
+
+def Ndet_behindlens_mu(pz,pm1,pq,R0,norm_m1,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,sigma,zL,mu_image,nys,mmin,mmax,n_m1,n_m2,zmax,n_z):
+    # Mass in Msun at *source* frame
+    zs = np.logspace(np.log10(zL),np.log10(zmax),n_z)
+    dn_detec = vdNdet_behindlens_mu_dz(zs,pz,pm1,pq,R0,norm_m1,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,sigma,zL,mu_image,nys,mmin,mmax,n_m1,n_m2)
+    return trapz(dn_detec,zs)
+
+def dNdet_MC_behindlens_mu_dz(z,N_mc,pz,pm1,pq,R0,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,sigma,zL,mu_image,zmin,zmax,mmin,mmax):
+    #rate in yr^-1 Gpc^-3
+    #f in *detector* frame
+    #M in *source* frame
+    #Tobs in *detector* frame
+    
+    cdf_z, cdf_m1, cdf_q, norm_z, norm_m1, norm_q, zs_cdf, masses_cdf, qs_cdf = gwrates.compute_cdf(pz,pm1,pq,R0,H0,Om0,Tobs,zL,zmax,mmin,mmax)
+
+    #Note: the samples in z are actually not needed in this implementation
+    m1_mock, m2_mock, z_mock, y_mock = gwrates.mock_source_parameters(N_mc,cdf_z,cdf_m1,cdf_q,zs_cdf,masses_cdf,qs_cdf)
+
+    dL = gwcosmo.dL_approx(z,H0,Om0)
+    mass_1z = m1_mock*(1.+z)
+    mass_2z = m2_mock*(1.+z)
+
+    fmin_gw = fmin_detect # gwutils.f_ini(Tobs,Mc*(1.+z))
+    snr_opt = gwutils.vsnr_from_psd(mass_1z,mass_2z,dL,fmin_gw,Tobs,detectorSn,fmin_detect,fmax_detect,based)
+    snr_opt_mu = snr_opt * np.sqrt(abs(mu_image(y_mock)))
+    pw = sc.pw_hl(snr_th/snr_opt_mu)
+
+    #We make a Monte Carlo integral for all variable but the redshift
+    integrand = dNcbc_dz(z,pz,R0,H0,Om0,Tobs) * pw * sistau.tau_singlelens(z,sigma,zL)
+    mean_integrand = np.sum(integrand)/N_mc
+
+    mean_integrand_square = np.sum(integrand**2)/N_mc
+    error_std = np.sqrt((mean_integrand_square-mean_integrand**2)/N_mc)
+
+    return mean_integrand, error_std
+vdNdet_MC_behindlens_mu_dz = np.vectorize(dNdet_MC_behindlens_mu_dz)
+
+def Ndet_MC_behindlens_mu(N_mc,pz,pm1,pq,R0,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,sigma,zL,mu_image,zmin,zmax,mmin,mmax,n_z):
+
+    zs = np.logspace(np.log10(zL),np.log10(zmax),n_z)
+    dn_detec, dn_error = vdNdet_MC_behindlens_mu_dz(zs,N_mc,pz,pm1,pq,R0,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,sigma,zL,mu_image,zmin,zmax,mmin,mmax)
+    return trapz(dn_detec,zs), trapz(dn_error,zs)
+ 

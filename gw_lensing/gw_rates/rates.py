@@ -5,6 +5,7 @@ from scipy.integrate import cumtrapz
 from ..cosmology import gwcosmo
 #from spectral_sirens.utils import gwutils
 from ..detectors import sensitivity_curves as sc
+from ..optical_depth import sis_optical_depth as sistau
 
 from ..utils import gwutils
 from ..utils import utils
@@ -133,3 +134,39 @@ def Ndet_MC(N_mc,pz,pm1,pq,R0,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_det
     zs = np.logspace(np.log10(zmin),np.log10(zmax),n_z)
     dn_detec, dn_error = vdNdet_MC_dz(zs,N_mc,pz,pm1,pq,R0,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,zmin,zmax,mmin,mmax)
     return trapz(dn_detec,zs), trapz(dn_error,zs)
+
+""" Rates behind a single lens """
+
+def dNcbc_behindlens_dz(z,pz,R0,H0,Om0,Tobs,sigma,zL):
+    """Differential rate of CBCs lensed by SISs at redshift z
+    
+    Parameters
+    ----------
+    z : float
+        Redshift
+    pz : function
+        Redshift distribution of CBCs
+    R0 : float
+        Rate of CBCs at z=0
+    H0 : float
+        Hubble constant in km/s/Mpc
+    Om0 : float
+        Matter density at z=0
+    Tobs : float
+        Observation time in years
+    log10Mmin : float
+        Minimum log10 mass of the SIS in Msun
+    log10Mmax : float
+        Maximum log10 mass of the SIS in Msun
+    nMs : int
+        Number of lens mass bins
+    nzLs : int
+        Number of lens redshift bins
+        """
+    return dNcbc_dz(z,pz,R0,H0,Om0,Tobs)*sistau.dtau_singlelens_dz(sigma,zL,z)
+
+def Ncbc_behindlens(pz,R0,H0,Om0,Tobs,sigma,zL,zmax,n_z):
+    # Mass in Msun at *source* frame
+    zs = np.logspace(np.log10(zL),np.log10(zmax),n_z)
+    dn = dNcbc_behindlens_dz(zs,pz,R0,H0,Om0,Tobs,sigma,zL)
+    return trapz(dn,zs)
