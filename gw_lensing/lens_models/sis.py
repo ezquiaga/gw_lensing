@@ -63,6 +63,29 @@ def sigma_v(M,z): #m/s
     rho_200 = 200*rho_c
     return np.power(np.sqrt(np.pi*np.power(Gnewton,3)*rho_200/6)*M*MSUN,1./3)
 
+"""Virial radius"""
+def R_vir(M,z): #meters
+    """Virial (R200c) radius of a halo of mass M at redshift z.
+
+    Uses the same rho_200 = 200*rho_c(z) definition sigma_v() relies on
+    internally, so M, R_vir and sigma_v are mutually consistent (an SIS
+    whose enclosed mass at R_vir equals M, sourced by rho_200). Deliberately
+    not using colossus.halo.mass_so.M_to_R, which works in Mpc/h, Msun/h
+    internal units that risk a silent mismatch against this module's plain
+    Msun/Mpc astropy convention.
+
+    Parameters
+    ----------
+    M : float
+        Halo mass in solar masses (M200c).
+    z : float
+        Halo redshift.
+    """
+    rho_c_g_cm3 = cosmo.critical_density(z).value# g/cm^3
+    rho_c = rho_c_g_cm3*1e-3*1e6 # kg/m^3
+    rho_200 = 200*rho_c
+    return np.power(3*M*MSUN/(4*np.pi*rho_200),1./3)
+
 """Einstein radius"""
 def theta_E(sigma,z_L,z_S):
     #sigma in m/s
@@ -87,6 +110,21 @@ def sigma_mu(M,z_L,z_S,mu0): #cross section
     return 2. * np.pi * np.power(theta_E(sigma,z_L,z_S),2.) * (mu0**2 + 1) / np.power((mu0**2 - 1),2.)
 
 """Time delay"""
+def t_ref_sigma(sigma,zL,zS): 
+    """Reference time delay in years
+    
+    Parameters
+    ----------
+    sigma : float
+        velocity dispersion in m/s
+    zL : float
+        redshift of the lens
+    zS : float
+        redshift of the source
+    """
+    return lensutils.t_distance(zL,zS)*theta_E(sigma,zL,zS)**2 / YEAR
+
+
 def t_ref(ML,zL,zS): 
     """Reference time delay in years
     
@@ -100,7 +138,7 @@ def t_ref(ML,zL,zS):
         redshift of the source
     """
     sigma = sigma_v(ML,zL)
-    return lensutils.t_distance(zL,zS)*theta_E(sigma,zL,zS)**2 / YEAR
+    return t_ref_sigma(sigma,zL,zS)
 
 def t_delay(y,ML,zL,zS): 
     """Time delay in years
