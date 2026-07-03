@@ -42,6 +42,8 @@ plots_gw_lensing/
 data_mock_catalogues/
 data_injections/
 examples/plots/
+examples/data/
+examples/working_examples/
 examples/scripts/
 examples/old_notebooks/
 __pycache__/
