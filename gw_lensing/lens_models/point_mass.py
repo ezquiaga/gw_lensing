@@ -46,7 +46,7 @@ def mu_minus(y):
 
 """Einstein radius"""
 def theta_E(M_L,z_L,z_S):
-    #M in solar masses
+    #M_L is the redshifted lens mass in solar masses
     #Clight in m/s
     DL = cosmo.angular_diameter_distance(z_L).value #Mpc
     DS = cosmo.angular_diameter_distance(z_S).value #Mpc
