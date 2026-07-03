@@ -52,7 +52,7 @@ def theta_E(M_L,z_L,z_S):
     DS = cosmo.angular_diameter_distance(z_S).value #Mpc
     DLS = cosmo.angular_diameter_distance_z1z2(z_L,z_S).value #Mpc
     
-    thetaE2 = 4 * Gnewton * (1 + z_L)* M_L * MSUN / (Clight**2) * DLS / (DL * DS * MPC) #rad^2
+    thetaE2 = 4 * Gnewton * M_L * MSUN / (Clight**2) * DLS / (DL * DS * MPC) #rad^2
     return np.sqrt(thetaE2) #rad
 
 "Diffraction integral"
