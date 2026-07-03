@@ -18,7 +18,7 @@ def d2tau_dzdlnM(M,z_L,z_S):
     #hmf in Mpc^-3
     #dVc/dzdOmega in Mpc^3/sr
     dVcdzdOm = cosmo.differential_comoving_volume(z_L).value
-    dndlnM = (h0**3)*mass_function.massFunction(M, z_L, mdef = '200c', model = 'tinker08',q_out = 'dndlnM')
+    dndlnM = (h0**3)*mass_function.massFunction(M*h0, z_L, mdef = '200c', model = 'tinker08',q_out = 'dndlnM')
     return dVcdzdOm * dndlnM * sigma_two(M,z_L,z_S)
 vd2tau_dzdlnM = np.vectorize(d2tau_dzdlnM)
 
@@ -76,7 +76,7 @@ def d2taudzdlnM_mu(M,z_L,z_S,mu0):
     #Input dndlnM in (Mpc/h)^-3
     #dVc/dzdOmega in Mpc^3/sr
     dVcdzdOm = cosmo.differential_comoving_volume(z_L).value
-    dndlnM_tinker = (h0**3)*mass_function.massFunction(M, z_L, mdef = '200c', model = 'tinker08',q_out = 'dndlnM')
+    dndlnM_tinker = (h0**3)*mass_function.massFunction(M*h0, z_L, mdef = '200c', model = 'tinker08',q_out = 'dndlnM')
     return dVcdzdOm * dndlnM_tinker * sigma_mu(M,z_L,z_S,mu0)
 
 def dtaudz_mu(z_L,z_S,mu0,log10Mmin,log10Mmax,nMs):
@@ -96,7 +96,7 @@ def d2tau_Dt_dzdlnM(ML,z_L,z_S,t,Tobs,y):
     #hmf in Mpc^-3
     #dVc/dzdOmega in Mpc^3/sr
     dVcdzdOm = cosmo.differential_comoving_volume(z_L).value
-    dndlnM = (h0**3)*mass_function.massFunction(ML, z_L, mdef = '200c', model = 'tinker08',q_out = 'dndlnM')
+    dndlnM = (h0**3)*mass_function.massFunction(ML*h0, z_L, mdef = '200c', model = 'tinker08',q_out = 'dndlnM')
 
     #time delay selection
     dt = t_delay(y,ML,z_L,z_S)
@@ -124,7 +124,7 @@ def d3tau_dDtdzdlnM(Dt,M,z_L,z_S):
     #hmf in Mpc^-3
     #dVc/dzdOmega in Mpc^3/sr
     dVcdzdOm = cosmo.differential_comoving_volume(z_L).value
-    dndlnM = (h0**3)*mass_function.massFunction(M, z_L, mdef = '200c', model = 'tinker08',q_out = 'dndlnM')
+    dndlnM = (h0**3)*mass_function.massFunction(M*h0, z_L, mdef = '200c', model = 'tinker08',q_out = 'dndlnM')
     return dVcdzdOm * dndlnM * sigma_two(M,z_L,z_S) * np.heaviside(t_ref(M,z_L,z_S)-Dt,1.)/t_ref(M,z_L,z_S)
 vd3tau_dDtdzdlnM = np.vectorize(d3tau_dDtdzdlnM)
 
@@ -138,3 +138,32 @@ def dtau_dDt(Dt,z_S,log10Mmin,log10Mmax,nMs,nzs):
     zs = np.logspace(-3,np.log10(z_S-1e-10),nzs)
     return trapezoid(d2tau_dDtdz(Dt,zs,z_S,log10Mmin,log10Mmax,nMs),zs)
 dtau_dDt = np.vectorize(dtau_dDt)
+
+#Schechter function with SIS lens model
+def dpdsigma(sigma,sigmaS,alpha,beta):
+    return np.power(sigma/sigmaS,alpha)*np.exp(-np.power(sigma/sigmaS,beta))*beta/gamma(alpha/beta)/sigma
+
+def d3tau_Schechter_dDtdzdsigma(Dt,zS,zL,n,sigma,sigmaS,alpha,beta):
+    #sigmaS km/s
+    #n in #/Mpc^3
+    c_km = Clight/1000
+    sigma_ms = sigma * 1000 #m/s
+    Hz = cosmo.H(zL).value #Km/Mpc /s
+    DL = cosmo.angular_diameter_distance(zL).value #Mpc
+    DS = cosmo.angular_diameter_distance(zS).value #Mpc
+    DLS = cosmo.angular_diameter_distance_z1z2(zL,zS).value #Mpc
+    
+    factor = 16 * np.power(np.pi,3)
+    
+    return factor*np.power(1+zL,2)*(c_km*n/Hz)*np.power(DL*DLS/DS,2)*np.power(sigma/c_km,4)*dpdsigma(sigma,sigmaS,alpha,beta)* np.heaviside(t_ref_sigma(sigma_ms,zL,zS)-Dt,1.)/t_ref_sigma(sigma_ms,zL,zS)
+ 
+def d2tau_Schechter_dDtdz(Dt,zS,zL,n,sigmaS,alpha,beta,nSigma):
+    sigma_s = np.logspace(np.log10(sigmaS/100),np.log10(sigmaS*100),nSigma)
+    return trapezoid(d3tau_Schechter_dDtdzdsigma(Dt,zS,zL,n,sigma_s,sigmaS,alpha,beta),sigma_s)
+d2tau_Schechter_dDtdz = np.vectorize(d2tau_Schechter_dDtdz)
+
+def dtau_Schechter_dDt(Dt,z_S,n,sigmaS,alpha,beta,nSigma,nzs):
+    #zs = np.linspace(0.,z_S,nzs)
+    zLs = np.logspace(-3,np.log10(z_S-1e-10),nzs)
+    return trapezoid(d2tau_Schechter_dDtdz(Dt,z_S,zLs,n,sigmaS,alpha,beta,nSigma),zLs)
+dtau_Schechter_dDt = np.vectorize(dtau_Schechter_dDt)
