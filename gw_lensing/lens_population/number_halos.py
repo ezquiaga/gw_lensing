@@ -13,7 +13,7 @@ def d2n_halodzdlnM(M,z_L,z_S):
     #hmf in Mpc^-3
     #dVc/dz in Mpc^3
     dVcdzdOm = 4*np.pi*cosmo.differential_comoving_volume(z_L).value
-    dndlnM = (h0**3)*mass_function.massFunction(M, z_L, mdef = '200c', model = 'tinker08',q_out = 'dndlnM')
+    dndlnM = (h0**3)*mass_function.massFunction(M*h0, z_L, mdef = '200c', model = 'tinker08',q_out = 'dndlnM')
     #dndlnM = (h0**3)*hmf.dndlnM_int(M,z_L)
     return dVcdzdOm * dndlnM 
 
