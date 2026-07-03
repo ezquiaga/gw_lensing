@@ -67,13 +67,6 @@ def sigma_v(M,z): #m/s
 def R_vir(M,z): #meters
     """Virial (R200c) radius of a halo of mass M at redshift z.
 
-    Uses the same rho_200 = 200*rho_c(z) definition sigma_v() relies on
-    internally, so M, R_vir and sigma_v are mutually consistent (an SIS
-    whose enclosed mass at R_vir equals M, sourced by rho_200). Deliberately
-    not using colossus.halo.mass_so.M_to_R, which works in Mpc/h, Msun/h
-    internal units that risk a silent mismatch against this module's plain
-    Msun/Mpc astropy convention.
-
     Parameters
     ----------
     M : float
