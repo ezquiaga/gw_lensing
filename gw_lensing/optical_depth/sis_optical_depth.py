@@ -125,7 +125,10 @@ def d3tau_dDtdzdlnM(Dt,M,z_L,z_S):
     #dVc/dzdOmega in Mpc^3/sr
     dVcdzdOm = cosmo.differential_comoving_volume(z_L).value
     dndlnM = (h0**3)*mass_function.massFunction(M*h0, z_L, mdef = '200c', model = 'tinker08',q_out = 'dndlnM')
-    return dVcdzdOm * dndlnM * sigma_two(M,z_L,z_S) * np.heaviside(t_ref(M,z_L,z_S)-Dt,1.)/t_ref(M,z_L,z_S)
+    tref = t_ref(M,z_L,z_S)
+    #Note that Delta t = 2*y*t_ref with y~p(y)=2y on [0,1]
+    #p(Delta t) = Delta t/(2*t_ref^2) on [0,2*t_ref]
+    return dVcdzdOm * dndlnM * sigma_two(M,z_L,z_S) * Dt/(2.*tref**2) * np.heaviside(2.*tref-Dt,1.)
 vd3tau_dDtdzdlnM = np.vectorize(d3tau_dDtdzdlnM)
 
 def d2tau_dDtdz(Dt,z_L,z_S,log10Mmin,log10Mmax,nMs):
@@ -154,8 +157,10 @@ def d3tau_Schechter_dDtdzdsigma(Dt,zS,zL,n,sigma,sigmaS,alpha,beta):
     DLS = cosmo.angular_diameter_distance_z1z2(zL,zS).value #Mpc
     
     factor = 16 * np.power(np.pi,3)
-    
-    return factor*np.power(1+zL,2)*(c_km*n/Hz)*np.power(DL*DLS/DS,2)*np.power(sigma/c_km,4)*dpdsigma(sigma,sigmaS,alpha,beta)* np.heaviside(t_ref_sigma(sigma_ms,zL,zS)-Dt,1.)/t_ref_sigma(sigma_ms,zL,zS)
+    tref = t_ref_sigma(sigma_ms,zL,zS)
+    #Note that Delta t = 2*y*t_ref with y~p(y)=2y on [0,1]
+    #p(Delta t) = Delta t/(2*t_ref^2) on [0,2*t_ref]
+    return factor*np.power(1+zL,2)*(c_km*n/Hz)*np.power(DL*DLS/DS,2)*np.power(sigma/c_km,4)*dpdsigma(sigma,sigmaS,alpha,beta) * Dt/(2.*tref**2) * np.heaviside(2.*tref-Dt,1.)
  
 def d2tau_Schechter_dDtdz(Dt,zS,zL,n,sigmaS,alpha,beta,nSigma):
     sigma_s = np.logspace(np.log10(sigmaS/100),np.log10(sigmaS*100),nSigma)
