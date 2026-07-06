@@ -107,9 +107,10 @@ def d4Ndet_lens_mu_dzdm1dm2dy(z,mass_1,mass_2,y,pz,pm1,pm2,R0,norm_m1,H0,Om0,Tob
     snr_opt = gwutils.vsnr_from_psd(mass_1z,mass_2z,dL,fmin_gw,Tobs,detectorSn,fmin_detect,fmax_detect,based)
     snr_opt_mu = snr_opt * np.sqrt(abs(mu_image(y)))
     pw = sc.pw_hl(snr_th/snr_opt_mu)
+    py = 2 * y # uniform prior in y^2 for SIS lenses
 
     pm = norm_m1 * pm1(mass_1) * pm2(mass_2,mass_1)
-    integrand = dNcbc_dz(z,pz,R0,H0,Om0,Tobs) * pm * pw *sistau.tau(z,log10Mmin,log10Mmax,nMs,nzLs)
+    integrand = dNcbc_dz(z,pz,R0,H0,Om0,Tobs) * pm * pw * py * sistau.tau(z,log10Mmin,log10Mmax,nMs,nzLs)
     return integrand
 vd4Ndet_lens_dzdm1dm2dy = np.vectorize(d4Ndet_lens_mu_dzdm1dm2dy)
 
@@ -158,9 +159,10 @@ def d5Ndet_lens_mu_Dt_dtdzdm1dm2dy(t,z,mass_1,mass_2,y,pz,pm1,pm2,R0,norm_m1,H0,
     snr_opt = gwutils.vsnr_from_psd(mass_1z,mass_2z,dL,fmin_gw,Tobs,detectorSn,fmin_detect,fmax_detect,based)
     snr_opt_mu = snr_opt * np.sqrt(abs(mu_image(y)))
     pw = sc.pw_hl(snr_th/snr_opt_mu)
+    py = 2 * y # uniform prior in y^2 for SIS lenses
 
     pm = norm_m1 * pm1(mass_1) * pm2(mass_2,mass_1)
-    integrand = dNcbc_dz(z,pz,R0,H0,Om0,Tobs) * pm * pw *sistau.tau_Dt(z,t,Tobs,y,log10Mmin,log10Mmax,nMs,nzLs)
+    integrand = dNcbc_dz(z,pz,R0,H0,Om0,Tobs) * pm * pw * py * sistau.tau_Dt(z,t,Tobs,y,log10Mmin,log10Mmax,nMs,nzLs)
     return integrand
 vd5Ndet_lens_mu_Dt_dtdzdm1dm2dy = np.vectorize(d5Ndet_lens_mu_Dt_dtdzdm1dm2dy)
 
@@ -210,6 +212,7 @@ def dNdet_MC_lens_mu_dz(z,N_mc,pz,pm1,pq,R0,H0,Om0,Tobs,snr_th,detectorSn,fmin_d
     cdf_z, cdf_m1, cdf_q, norm_z, norm_m1, norm_q, zs_cdf, masses_cdf, qs_cdf = gwrates.compute_cdf(pz,pm1,pq,R0,H0,Om0,Tobs,zmin,zmax,mmin,mmax)
 
     #Note: the samples in z are actually not needed in this implementation
+    #Samples in y are drawn from a uniform distribution in y^2
     m1_mock, m2_mock, z_mock, y_mock = gwrates.mock_source_parameters(N_mc,cdf_z,cdf_m1,cdf_q,zs_cdf,masses_cdf,qs_cdf)
 
     dL = gwcosmo.dL_approx(z,H0,Om0)
@@ -254,9 +257,10 @@ def d4Ndet_behindlens_mu_dzdm1dm2dy(z,mass_1,mass_2,y,pz,pm1,pm2,R0,norm_m1,H0,O
     snr_opt = gwutils.vsnr_from_psd(mass_1z,mass_2z,dL,fmin_gw,Tobs,detectorSn,fmin_detect,fmax_detect,based)
     snr_opt_mu = snr_opt * np.sqrt(abs(mu_image(y)))
     pw = sc.pw_hl(snr_th/snr_opt_mu)
+    py = 2 * y # uniform prior in y^2 for SIS lenses
 
     pm = norm_m1 * pm1(mass_1) * pm2(mass_2,mass_1)
-    integrand = dNcbc_dz(z,pz,R0,H0,Om0,Tobs) * pm * pw * sistau.tau_singlelens(z,sigma,zL)
+    integrand = dNcbc_dz(z,pz,R0,H0,Om0,Tobs) * pm * pw * py * sistau.tau_singlelens(z,sigma,zL)
     return integrand
 vd4Ndet_behindlens_mu_dzdm1dm2dy = np.vectorize(d4Ndet_behindlens_mu_dzdm1dm2dy)
 

@@ -92,7 +92,9 @@ def mock_source_parameters(n_sources,cdf_z,cdf_m1,cdf_q,zs,masses,qs):
     q_mock = utils.inverse_transf_sampling(cdf_q,qs,n_sources)
     m2_mock = m1_mock * q_mock
 
-    y_mock = np.random.uniform(0,1,n_sources) #dimensionless source position
+    #dimensionless radial source position in units of Einstein radius for axisymmetric lenses (SIS, point mass, etc). 
+    #This is a uniform prior in y^2.
+    y_mock = np.sqrt(np.random.uniform(0,1,n_sources)) 
 
     return m1_mock, m2_mock, z_mock, y_mock
 
@@ -103,7 +105,9 @@ def mock_detector_frame_parameters(n_sources,cdf_z,cdf_m1,cdf_q,zs,masses,qs,H0,
     q_mock = utils.inverse_transf_sampling(cdf_q,qs,n_sources)
     m2_mock = m1_mock * q_mock
 
-    y_mock = np.random.uniform(0,1,n_sources) #dimensionless source position
+    #dimensionless radial source position in units of Einstein radius for axisymmetric lenses (SIS, point mass, etc). 
+    #This is a uniform prior in y^2.
+    y_mock = np.sqrt(np.random.uniform(0,1,n_sources)) 
 
     dL_mock = gwcosmo.dL_approx(z_mock,H0,Om0)
 
