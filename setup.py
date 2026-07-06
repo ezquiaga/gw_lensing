@@ -1,6 +1,6 @@
 import setuptools
 
-verstr = "0.0.1"
+verstr = "0.0.2"
 
 setuptools.setup(
     name="gw_lensing",
