@@ -56,6 +56,127 @@ def powerlaw_peak_smooth(m1,mMin,mMax,alpha,sig_m1,mu_m1,f_peak,mMin_filter,mMax
     # Apply filters to combined power-law and peak
     return plp*low_filter*high_filter
 
+def broken_powerlaw_two_peaks(m1,mMin,mMax,m_break,alpha_1,alpha_2,mu_1,sig_1,mu_2,sig_2,lam_0,lam_1):
+    r"""
+    Broken power law + two Gaussian peaks primary-mass distribution
+
+    Mixture used as the GWTC-5.0 Default BBH primary-mass model
+    (arXiv:2605.27226, Eqs. B10-B12; same model as GWTC-4.0, arXiv:2508.18083):
+
+    .. math::
+        p(m_1) = \lambda_0 \, p_\mathrm{BP}(m_1)
+               + \lambda_1 \, \mathcal{N}(m_1 | \mu_1, \sigma_1)
+               + (1 - \lambda_0 - \lambda_1) \, \mathcal{N}(m_1 | \mu_2, \sigma_2)
+
+    SIGN CONVENTION: ``alpha_1``/``alpha_2`` follow the repo convention
+    p ~ m^alpha (see ``utils.broken_powerlaw``), so the GWTC-5.0 median
+    slopes (paper convention p ~ m^-alpha) alpha_1=1.5, alpha_2=5.4 enter
+    here as ``alpha_1=-1.5``, ``alpha_2=-5.4``.
+
+    Note: the paper uses left-truncated (at m_1,low) normal peaks; here we
+    follow the repo idiom (cf. ``powerlaw_peak``) and use untruncated
+    Gaussians, an excellent approximation for peaks well above mMin.
+
+    Parameters
+    ----------
+    m1 : array_like
+        Primary component mass
+    mMin : float
+        Minimum mass of the broken power-law support
+    mMax : float
+        Maximum mass of the broken power-law support
+    m_break : float
+        Break mass of the power law
+    alpha_1 : float
+        Power-law index below the break (p ~ m^alpha_1)
+    alpha_2 : float
+        Power-law index above the break (p ~ m^alpha_2)
+    mu_1 : float
+        Mean of the lower-mass Gaussian peak
+    sig_1 : float
+        Width of the lower-mass Gaussian peak
+    mu_2 : float
+        Mean of the higher-mass Gaussian peak
+    sig_2 : float
+        Width of the higher-mass Gaussian peak
+    lam_0 : float
+        Mixing fraction in the broken power law
+    lam_1 : float
+        Mixing fraction in the lower-mass peak
+        (the higher-mass peak carries 1 - lam_0 - lam_1)
+
+    Returns
+    -------
+    array_like
+        Broken power law + two peaks distribution
+    """
+    # Define broken power-law and peaks
+    p_m1_bpl = utils.broken_powerlaw(m1,mMin,mMax,m_break,alpha_1,alpha_2)
+    p_m1_peak_1 = utils.gaussian(m1,mu_1,sig_1)
+    p_m1_peak_2 = utils.gaussian(m1,mu_2,sig_2)
+
+    # Combined broken power-law and peaks
+    return lam_0*p_m1_bpl + lam_1*p_m1_peak_1 + (1.-lam_0-lam_1)*p_m1_peak_2
+
+def broken_powerlaw_two_peaks_smooth(m1,mMin,mMax,m_break,alpha_1,alpha_2,mu_1,sig_1,mu_2,sig_2,lam_0,lam_1,mMin_filter,mMax_filter,dmMin_filter,dmMax_filter):
+    """
+    Smoothed broken power law + two peaks distribution
+
+    GWTC-5.0-like Default BBH primary-mass model (arXiv:2605.27226,
+    Eqs. B10-B12) with the repo's Gaussian low/high-mass filters applied
+    (cf. ``powerlaw_peak_smooth``) instead of the paper's Planck taper.
+
+    Parameters
+    ----------
+    m1 : array_like
+        Primary component mass
+    mMin : float
+        Minimum mass of the broken power-law support
+    mMax : float
+        Maximum mass of the broken power-law support
+    m_break : float
+        Break mass of the power law
+    alpha_1 : float
+        Power-law index below the break (p ~ m^alpha_1; see
+        ``broken_powerlaw_two_peaks`` for the sign convention)
+    alpha_2 : float
+        Power-law index above the break (p ~ m^alpha_2)
+    mu_1 : float
+        Mean of the lower-mass Gaussian peak
+    sig_1 : float
+        Width of the lower-mass Gaussian peak
+    mu_2 : float
+        Mean of the higher-mass Gaussian peak
+    sig_2 : float
+        Width of the higher-mass Gaussian peak
+    lam_0 : float
+        Mixing fraction in the broken power law
+    lam_1 : float
+        Mixing fraction in the lower-mass peak
+    mMin_filter : float
+        Minimum component mass for low-mass filter
+    mMax_filter : float
+        Maximum component mass for high-mass filter
+    dmMin_filter : float
+        Width of low-mass filter
+    dmMax_filter : float
+        Width of high-mass filter
+
+    Returns
+    -------
+    array_like
+        Smoothed broken power law + two peaks distribution
+    """
+    # Broken power law + two peaks
+    bpl2p = broken_powerlaw_two_peaks(m1,mMin,mMax,m_break,alpha_1,alpha_2,mu_1,sig_1,mu_2,sig_2,lam_0,lam_1)
+
+    # Compute low- and high-mass filters
+    low_filter = utils.lowfilter(m1,mMin_filter,dmMin_filter)
+    high_filter = utils.highfilter(m1,mMax_filter,dmMax_filter)
+
+    # Apply filters to combined broken power-law and peaks
+    return bpl2p*low_filter*high_filter
+
 def powerlaw_peak_gwtc3(m1,mMin,mMax,alpha,sig_m1,mu_m1,f_peak,deltaM):
     """
     Smoothed power-law + peak distribution used in GWTC-3
