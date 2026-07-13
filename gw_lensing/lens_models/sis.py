@@ -98,7 +98,23 @@ def sigma_two_velocity(sigma,z_L,z_S): #cross section
 
 
 #Magnification cross section: mu > mu0
+def sigma_mu_plus(M,z_L,z_S,mu0): #cross section
+    """Magnification cross section for the positive image: mu+ > mu0
+    """
+    sigma = sigma_v(M,z_L) #velocity dispersion
+    return np.pi * np.power(theta_E(sigma,z_L,z_S),2.) / np.power((mu0 - 1),2.)
+
+def sigma_mu_minus(M,z_L,z_S,mu0): #cross section
+    """Magnification cross section for the negative image: mu- > mu0
+    """
+    sigma = sigma_v(M,z_L) #velocity dispersion
+    return np.pi * np.power(theta_E(sigma,z_L,z_S),2.) / np.power((mu0 + 1),2.)
+
 def sigma_mu(M,z_L,z_S,mu0): #cross section
+    """Magnification cross section for the total magnification: mu > mu0
+
+    sigma_mu = sigma_mu_plus + sigma_mu_minus
+    """
     sigma = sigma_v(M,z_L) #velocity dispersion
     return 2. * np.pi * np.power(theta_E(sigma,z_L,z_S),2.) * (mu0**2 + 1) / np.power((mu0**2 - 1),2.)
 

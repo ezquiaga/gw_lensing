@@ -71,23 +71,38 @@ def tau_Schechter(zS,n,sigmaS,alpha,beta):
     return trapezoid(dtau_Schechterdz(zS,zLs[:-1],n,sigmaS,alpha,beta),zLs[:-1])
 tau_Schechter = np.vectorize(tau_Schechter)
 
+def tau_Schechter_mu(zS,mu0,cross_section_mu,n,sigmaS,alpha,beta):
+    """SIS optical depth for mu>mu0, with a
+    Schechter velocity-dispersion function. 
+    We exploit that the magnification cross section is proportional to the cross section for multiple imaging
+
+    sigmaS in km/s; n in Mpc^-3 (same conventions as tau_Schechter).
+
+    """
+    M_fid = 1e12  # Msun
+    zL_fid = 0.5
+    zS_fid = 2.0
+    mag_factor = cross_section_mu(M_fid,zL_fid,zS_fid,mu0) / sigma_two(M_fid,zL_fid,zS_fid)  # sigma_mu/sigma_two
+    return mag_factor * tau_Schechter(zS,n,sigmaS,alpha,beta)
+tau_Schechter_mu = np.vectorize(tau_Schechter_mu)
+
 """High magnification optical depth"""
-def d2taudzdlnM_mu(M,z_L,z_S,mu0):
+def d2taudzdlnM_mu(M,z_L,z_S,mu0,cross_section_mu):
     #Input dndlnM in (Mpc/h)^-3
     #dVc/dzdOmega in Mpc^3/sr
     dVcdzdOm = cosmo.differential_comoving_volume(z_L).value
     dndlnM_tinker = (h0**3)*mass_function.massFunction(M*h0, z_L, mdef = '200c', model = 'tinker08',q_out = 'dndlnM')
-    return dVcdzdOm * dndlnM_tinker * sigma_mu(M,z_L,z_S,mu0)
+    return dVcdzdOm * dndlnM_tinker * cross_section_mu(M,z_L,z_S,mu0)
 
-def dtaudz_mu(z_L,z_S,mu0,log10Mmin,log10Mmax,nMs):
+def dtaudz_mu(z_L,z_S,mu0,cross_section_mu,log10Mmin,log10Mmax,nMs):
     Ms = np.logspace(log10Mmin,log10Mmax,nMs)
-    return trapezoid(d2taudzdlnM_mu(Ms,z_L,z_S,mu0),np.log(Ms))
+    return trapezoid(d2taudzdlnM_mu(Ms,z_L,z_S,mu0,cross_section_mu),np.log(Ms))
 dtaudz_mu = np.vectorize(dtaudz_mu)
 
-def tau_mu(z_S,mu0,log10Mmin,log10Mmax,nMs,nzs):
+def tau_mu(z_S,mu0,cross_section_mu,log10Mmin,log10Mmax,nMs,nzs):
     #zs = np.linspace(0.,z_S,nzs)
     zLs = np.logspace(-3,np.log10(z_S),nzs)
-    return trapezoid(dtaudz_mu(zLs,z_S,mu0,log10Mmin,log10Mmax,nMs),zLs)
+    return trapezoid(dtaudz_mu(zLs,z_S,mu0,cross_section_mu,log10Mmin,log10Mmax,nMs),zLs)
 tau_mu = np.vectorize(tau_mu)
 
 """Optical depth with timde delay selection function"""
