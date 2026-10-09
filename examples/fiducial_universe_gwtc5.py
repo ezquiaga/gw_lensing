@@ -51,4 +51,19 @@ dmMax_filter_fid = 10.0  # inert (no fitted high-mass taper in the release)
 #Mass ratio
 bq_fid = 1.04 # 'beta' for p(q) ~ q^beta, [0.367, 1.82]
 
+#-Binary neutron star (BNS) mergers
+#Local merger rate (LVK GWTC-5.0 population paper, arXiv:2605.27226, Table 2)
+#-----------------------------------------------------------------------------
+# Joint (PixelPop + FullPop union) 90% CI at z=0: [5.1, 154.7] yr^-1 Gpc^-3.
+# R0_bns_fid is the geometric mean of that interval (no pipeline preferred).
+R0_bns_low = 5.1  # yr^-1 Gpc^-3 (Joint 90% CI lower)
+R0_bns_up = 154.7  # yr^-1 Gpc^-3 (Joint 90% CI upper)
+R0_bns_fid = (R0_bns_low * R0_bns_up) ** 0.5  # yr^-1 Gpc^-3, ~28.1
+
+#Mass distribution: Uniform component masses (arXiv:2111.03634)
+#------------------------------------------------------------------
+mmin_bns_fid = 1.0  # Msun
+mmax_bns_fid = 2.2  # Msun
+bq_bns_fid = 0.0  
+
 Tobs_fid = 1. #yr
