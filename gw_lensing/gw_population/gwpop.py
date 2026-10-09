@@ -123,8 +123,12 @@ def broken_powerlaw_two_peaks_smooth(m1,mMin,mMax,m_break,alpha_1,alpha_2,mu_1,s
     Smoothed broken power law + two peaks distribution
 
     GWTC-5.0-like Default BBH primary-mass model (arXiv:2605.27226,
-    Eqs. B10-B12) with the repo's Gaussian low/high-mass filters applied
-    (cf. ``powerlaw_peak_smooth``) instead of the paper's Planck taper.
+    Eqs. B10-B12). The low-mass end is tapered with the Planck-taper window
+    ``utils.Sfilter`` (the gwpopulation-style smoothing: 0 below ``mMin_filter``,
+    ramping to 1 over ``[mMin_filter, mMin_filter+dmMin_filter]``), which
+    suppresses masses *within* the support so the rate drops below the low-mass
+    peak. A high-mass filter is also applied but is inert for GWTC-5.0 (``mmax``
+    pinned to 300 Msun).
 
     Parameters
     ----------
@@ -170,8 +174,9 @@ def broken_powerlaw_two_peaks_smooth(m1,mMin,mMax,m_break,alpha_1,alpha_2,mu_1,s
     # Broken power law + two peaks
     bpl2p = broken_powerlaw_two_peaks(m1,mMin,mMax,m_break,alpha_1,alpha_2,mu_1,sig_1,mu_2,sig_2,lam_0,lam_1)
 
-    # Compute low- and high-mass filters
-    low_filter = utils.lowfilter(m1,mMin_filter,dmMin_filter)
+    # Low-mass Planck taper (ramps 0->1 within [mMin_filter, mMin_filter+dmMin_filter],
+    # suppressing masses inside the support) and inert high-mass filter
+    low_filter = utils.Sfilter(m1,mMin_filter,dmMin_filter)
     high_filter = utils.highfilter(m1,mMax_filter,dmMax_filter)
 
     # Apply filters to combined broken power-law and peaks
