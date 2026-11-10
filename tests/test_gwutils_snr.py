@@ -68,3 +68,18 @@ def test_snr_from_psd_generates_waveform_once(psd, monkeypatch):
     monkeypatch.setattr(gwutils, "aS", counting_aS)
     gwutils.snr_from_psd(36.0, 29.0, 410.0, FMIN, TOBS, Sn, fmin_d, fmax_d, BASED)
     assert calls["n"] == 1
+
+
+def test_snr_from_psd_evaluates_psd_once(psd):
+    """The PSD interpolator must be evaluated once on the frequency array
+    (not separately for the integrand and the NaN mask)."""
+    Sn, fmin_d, fmax_d = psd
+    calls = {"n": 0}
+
+    def counting_Sn(f):
+        calls["n"] += 1
+        return Sn(f)
+
+    val = gwutils.snr_from_psd(36.0, 29.0, 410.0, FMIN, TOBS, counting_Sn, fmin_d, fmax_d, BASED)
+    assert calls["n"] == 1
+    assert val == pytest.approx(REFERENCE[1][3], rel=1e-12)
