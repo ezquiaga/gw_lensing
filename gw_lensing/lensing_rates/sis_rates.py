@@ -52,7 +52,7 @@ def Ncbc_lens(pz,R0,H0,Om0,Tobs,log10Mmin,log10Mmax,nMs,nzLs,zmin,zmax,n_z):
 (rates that a GW is lensed and detected WITHOUT magnification bias)
 """
 
-def d3Ndet_lens_dzdm1dm2(z,mass_1,mass_2,pz,pm1,pm2,R0,norm_m1,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,log10Mmin,log10Mmax,nMs,nzLs):
+def d3Ndet_lens_dzdm1dm2(z,mass_1,mass_2,pz,pm1,pm2,R0,norm_m1,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,log10Mmin,log10Mmax,nMs,nzLs,tau_z=None):
     #rate in yr^-1 Gpc^-3
     #f in *detector* frame
     #M in *source* frame
@@ -66,21 +66,24 @@ def d3Ndet_lens_dzdm1dm2(z,mass_1,mass_2,pz,pm1,pm2,R0,norm_m1,H0,Om0,Tobs,snr_t
     pw = sc.pw_hl(snr_th/snr_opt)
 
     pm = norm_m1 * pm1(mass_1) * pm2(mass_2,mass_1)
-    integrand = dNcbc_dz(z,pz,R0,H0,Om0,Tobs) * pm * pw *sistau.tau(z,log10Mmin,log10Mmax,nMs,nzLs)
+    if tau_z is None:  # standalone call; the tower passes tau(z) precomputed
+        tau_z = sistau.tau(z,log10Mmin,log10Mmax,nMs,nzLs)
+    integrand = dNcbc_dz(z,pz,R0,H0,Om0,Tobs) * pm * pw *tau_z
     return integrand
-vd3Ndet_lens_dzdm1dm2 = np.vectorize(d3Ndet_lens_dzdm1dm2)
+vd3Ndet_lens_dzdm1dm2 = np.vectorize(d3Ndet_lens_dzdm1dm2, excluded={'tau_z'})
 
-def d2Ndet_lens_dzdm1(z,mass_1,pz,pm1,pq,R0,norm_m1,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,log10Mmin,log10Mmax,nMs,nzLs,mmin,n_m2):
+def d2Ndet_lens_dzdm1(z,mass_1,pz,pm1,pq,R0,norm_m1,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,log10Mmin,log10Mmax,nMs,nzLs,mmin,n_m2,tau_z=None):
     # Mass in Msun at *source* frame
     mass_2s = np.linspace(mmin,mass_1,n_m2)
-    dn_detec = d3Ndet_lens_dzdm1dm2(z,mass_1,mass_2s,pz,pm1,pq,R0,norm_m1,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,log10Mmin,log10Mmax,nMs,nzLs)
+    dn_detec = d3Ndet_lens_dzdm1dm2(z,mass_1,mass_2s,pz,pm1,pq,R0,norm_m1,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,log10Mmin,log10Mmax,nMs,nzLs,tau_z=tau_z)
     return trapz(dn_detec,mass_2s)
-vd2Ndet_lens_dzdm1 = np.vectorize(d2Ndet_lens_dzdm1)
+vd2Ndet_lens_dzdm1 = np.vectorize(d2Ndet_lens_dzdm1, excluded={'tau_z'})
 
 def dNdet_lens_dz(z,pz,pm1,pq,R0,norm_m1,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,log10Mmin,log10Mmax,nMs,nzLs,mmin,mmax,n_m1,n_m2):
     # Mass in Msun at *source* frame
     mass_1s = np.linspace(mmin,mmax,n_m1)
-    dn_detec = vd2Ndet_lens_dzdm1(z,mass_1s,pz,pm1,pq,R0,norm_m1,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,log10Mmin,log10Mmax,nMs,nzLs,mmin,n_m2)
+    tau_z = sistau.tau(z,log10Mmin,log10Mmax,nMs,nzLs)  # depends on z only: once per z
+    dn_detec = vd2Ndet_lens_dzdm1(z,mass_1s,pz,pm1,pq,R0,norm_m1,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,log10Mmin,log10Mmax,nMs,nzLs,mmin,n_m2,tau_z=tau_z)
     return trapz(dn_detec,mass_1s)
 vdNdet_lens_dz = np.vectorize(dNdet_lens_dz)
 
@@ -94,7 +97,7 @@ def Ndet_lens(pz,pm1,pq,R0,norm_m1,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fma
 (rates that a GW is lensed and detected WITH magnification bias)
 """
 
-def d4Ndet_lens_mu_dzdm1dm2dy(z,mass_1,mass_2,y,pz,pm1,pm2,R0,norm_m1,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,log10Mmin,log10Mmax,nMs,nzLs,mu_image):
+def d4Ndet_lens_mu_dzdm1dm2dy(z,mass_1,mass_2,y,pz,pm1,pm2,R0,norm_m1,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,log10Mmin,log10Mmax,nMs,nzLs,mu_image,tau_z=None):
     #rate in yr^-1 Gpc^-3
     #f in *detector* frame
     #M in *source* frame
@@ -110,29 +113,32 @@ def d4Ndet_lens_mu_dzdm1dm2dy(z,mass_1,mass_2,y,pz,pm1,pm2,R0,norm_m1,H0,Om0,Tob
     py = 2 * y # uniform prior in y^2 for SIS lenses
 
     pm = norm_m1 * pm1(mass_1) * pm2(mass_2,mass_1)
-    integrand = dNcbc_dz(z,pz,R0,H0,Om0,Tobs) * pm * pw * py * sistau.tau(z,log10Mmin,log10Mmax,nMs,nzLs)
+    if tau_z is None:  # standalone call; the tower passes tau(z) precomputed
+        tau_z = sistau.tau(z,log10Mmin,log10Mmax,nMs,nzLs)
+    integrand = dNcbc_dz(z,pz,R0,H0,Om0,Tobs) * pm * pw * py * tau_z
     return integrand
-vd4Ndet_lens_dzdm1dm2dy = np.vectorize(d4Ndet_lens_mu_dzdm1dm2dy)
+vd4Ndet_lens_dzdm1dm2dy = np.vectorize(d4Ndet_lens_mu_dzdm1dm2dy, excluded={'tau_z'})
 
-def d3Ndet_lens_mu_dzdm1dm2(z,mass_1,mass_2,pz,pm1,pq,R0,norm_m1,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,log10Mmin,log10Mmax,nMs,nzLs,mu_image,nys):
+def d3Ndet_lens_mu_dzdm1dm2(z,mass_1,mass_2,pz,pm1,pq,R0,norm_m1,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,log10Mmin,log10Mmax,nMs,nzLs,mu_image,nys,tau_z=None):
     # Mass in Msun at *source* frame
     eps = 1e-10
     ys = np.linspace(0+eps,1.-eps,nys)
-    dn_detec = d4Ndet_lens_mu_dzdm1dm2dy(z,mass_1,mass_2,ys,pz,pm1,pq,R0,norm_m1,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,log10Mmin,log10Mmax,nMs,nzLs,mu_image)
+    dn_detec = d4Ndet_lens_mu_dzdm1dm2dy(z,mass_1,mass_2,ys,pz,pm1,pq,R0,norm_m1,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,log10Mmin,log10Mmax,nMs,nzLs,mu_image,tau_z=tau_z)
     return trapz(dn_detec,ys)
-vd3Ndet_lens_mu_dzdm1dm2 = np.vectorize(d3Ndet_lens_mu_dzdm1dm2)
+vd3Ndet_lens_mu_dzdm1dm2 = np.vectorize(d3Ndet_lens_mu_dzdm1dm2, excluded={'tau_z'})
 
-def d2Ndet_lens_mu_dzdm1(z,mass_1,pz,pm1,pq,R0,norm_m1,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,log10Mmin,log10Mmax,nMs,nzLs,mu_image,nys,mmin,n_m2):
+def d2Ndet_lens_mu_dzdm1(z,mass_1,pz,pm1,pq,R0,norm_m1,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,log10Mmin,log10Mmax,nMs,nzLs,mu_image,nys,mmin,n_m2,tau_z=None):
     # Mass in Msun at *source* frame
     mass_2s = np.linspace(mmin,mass_1,n_m2)
-    dn_detec = vd3Ndet_lens_mu_dzdm1dm2(z,mass_1,mass_2s,pz,pm1,pq,R0,norm_m1,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,log10Mmin,log10Mmax,nMs,nzLs,mu_image,nys)
+    dn_detec = vd3Ndet_lens_mu_dzdm1dm2(z,mass_1,mass_2s,pz,pm1,pq,R0,norm_m1,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,log10Mmin,log10Mmax,nMs,nzLs,mu_image,nys,tau_z=tau_z)
     return trapz(dn_detec,mass_2s)
-vd2Ndet_lens_mu_dzdm1 = np.vectorize(d2Ndet_lens_mu_dzdm1)
+vd2Ndet_lens_mu_dzdm1 = np.vectorize(d2Ndet_lens_mu_dzdm1, excluded={'tau_z'})
 
 def dNdet_lens_mu_dz(z,pz,pm1,pq,R0,norm_m1,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,log10Mmin,log10Mmax,nMs,nzLs,mu_image,nys,mmin,mmax,n_m1,n_m2):
     # Mass in Msun at *source* frame
     mass_1s = np.linspace(mmin,mmax,n_m1)
-    dn_detec = vd2Ndet_lens_mu_dzdm1(z,mass_1s,pz,pm1,pq,R0,norm_m1,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,log10Mmin,log10Mmax,nMs,nzLs,mu_image,nys,mmin,n_m2)
+    tau_z = sistau.tau(z,log10Mmin,log10Mmax,nMs,nzLs)  # depends on z only: once per z
+    dn_detec = vd2Ndet_lens_mu_dzdm1(z,mass_1s,pz,pm1,pq,R0,norm_m1,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,log10Mmin,log10Mmax,nMs,nzLs,mu_image,nys,mmin,n_m2,tau_z=tau_z)
     return trapz(dn_detec,mass_1s)
 vdNdet_lens_mu_dz = np.vectorize(dNdet_lens_mu_dz)
 
@@ -146,7 +152,7 @@ def Ndet_lens_mu(pz,pm1,pq,R0,norm_m1,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,
 (rates that a GW is lensed and detected WITH magnification bias AND time delay selection)
 """
 
-def d5Ndet_lens_mu_Dt_dtdzdm1dm2dy(t,z,mass_1,mass_2,y,pz,pm1,pm2,R0,norm_m1,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,log10Mmin,log10Mmax,nMs,nzLs,mu_image):
+def d5Ndet_lens_mu_Dt_dtdzdm1dm2dy(t,z,mass_1,mass_2,y,pz,pm1,pm2,R0,norm_m1,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,log10Mmin,log10Mmax,nMs,nzLs,mu_image,tau_y=None):
     #rate in yr^-1 Gpc^-3
     #f in *detector* frame
     #M in *source* frame
@@ -162,29 +168,34 @@ def d5Ndet_lens_mu_Dt_dtdzdm1dm2dy(t,z,mass_1,mass_2,y,pz,pm1,pm2,R0,norm_m1,H0,
     py = 2 * y # uniform prior in y^2 for SIS lenses
 
     pm = norm_m1 * pm1(mass_1) * pm2(mass_2,mass_1)
-    integrand = dNcbc_dz(z,pz,R0,H0,Om0,Tobs) * pm * pw * py * sistau.tau_Dt(z,t,Tobs,y,log10Mmin,log10Mmax,nMs,nzLs)
+    if tau_y is None:  # tau_Dt(z,t,y) on this y; the tower passes it precomputed
+        tau_y = sistau.tau_Dt(z,t,Tobs,y,log10Mmin,log10Mmax,nMs,nzLs)
+    integrand = dNcbc_dz(z,pz,R0,H0,Om0,Tobs) * pm * pw * py * tau_y
     return integrand
-vd5Ndet_lens_mu_Dt_dtdzdm1dm2dy = np.vectorize(d5Ndet_lens_mu_Dt_dtdzdm1dm2dy)
+vd5Ndet_lens_mu_Dt_dtdzdm1dm2dy = np.vectorize(d5Ndet_lens_mu_Dt_dtdzdm1dm2dy, excluded={'tau_y'})
 
-def d4Ndet_lens_mu_Dt_dtdzdm1dm2(t,z,mass_1,mass_2,pz,pm1,pm2,R0,norm_m1,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,log10Mmin,log10Mmax,nMs,nzLs,mu_image,nys):
+def d4Ndet_lens_mu_Dt_dtdzdm1dm2(t,z,mass_1,mass_2,pz,pm1,pm2,R0,norm_m1,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,log10Mmin,log10Mmax,nMs,nzLs,mu_image,nys,tau_y=None):
     # Mass in Msun at *source* frame
     eps = 1e-10
     ys = np.linspace(0+eps,1.-eps,nys)
-    dn_detec = d5Ndet_lens_mu_Dt_dtdzdm1dm2dy(t,z,mass_1,mass_2,ys,pz,pm1,pm2,R0,norm_m1,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,log10Mmin,log10Mmax,nMs,nzLs,mu_image)
+    dn_detec = d5Ndet_lens_mu_Dt_dtdzdm1dm2dy(t,z,mass_1,mass_2,ys,pz,pm1,pm2,R0,norm_m1,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,log10Mmin,log10Mmax,nMs,nzLs,mu_image,tau_y=tau_y)
     return trapz(dn_detec,ys)
-vd4Ndet_lens_mu_Dt_dtdzdm1dm2 = np.vectorize(d4Ndet_lens_mu_Dt_dtdzdm1dm2)
+vd4Ndet_lens_mu_Dt_dtdzdm1dm2 = np.vectorize(d4Ndet_lens_mu_Dt_dtdzdm1dm2, excluded={'tau_y'})
 
-def d3Ndet_lens_mu_Dt_dtdzdm1(t,z,mass_1,pz,pm1,pm2,R0,norm_m1,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,log10Mmin,log10Mmax,nMs,nzLs,mu_image,nys,mmin,n_m2):
+def d3Ndet_lens_mu_Dt_dtdzdm1(t,z,mass_1,pz,pm1,pm2,R0,norm_m1,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,log10Mmin,log10Mmax,nMs,nzLs,mu_image,nys,mmin,n_m2,tau_y=None):
     # Mass in Msun at *source* frame
     mass_2s = np.linspace(mmin,mass_1,n_m2)
-    dn_detec = vd4Ndet_lens_mu_Dt_dtdzdm1dm2(t,z,mass_1,mass_2s,pz,pm1,pm2,R0,norm_m1,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,log10Mmin,log10Mmax,nMs,nzLs,mu_image,nys)
+    dn_detec = vd4Ndet_lens_mu_Dt_dtdzdm1dm2(t,z,mass_1,mass_2s,pz,pm1,pm2,R0,norm_m1,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,log10Mmin,log10Mmax,nMs,nzLs,mu_image,nys,tau_y=tau_y)
     return trapz(dn_detec,mass_2s)
-vd3Ndet_lens_mu_Dt_dtdzdm1 = np.vectorize(d3Ndet_lens_mu_Dt_dtdzdm1)
+vd3Ndet_lens_mu_Dt_dtdzdm1 = np.vectorize(d3Ndet_lens_mu_Dt_dtdzdm1, excluded={'tau_y'})
 
 def d2Ndet_lens_mu_Dt_dtdz(t,z,pz,pm1,pm2,R0,norm_m1,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,log10Mmin,log10Mmax,nMs,nzLs,mu_image,nys,mmin,mmax,n_m1,n_m2):
     # Mass in Msun at *source* frame
     mass_1s = np.linspace(mmin,mmax,n_m1)
-    dn_detec = vd3Ndet_lens_mu_Dt_dtdzdm1(t,z,mass_1s,pz,pm1,pm2,R0,norm_m1,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,log10Mmin,log10Mmax,nMs,nzLs,mu_image,nys,mmin,n_m2)
+    eps = 1e-10
+    ys = np.linspace(0+eps,1.-eps,nys)  # same y grid as d4Ndet_lens_mu_Dt_dtdzdm1dm2
+    tau_y = sistau.tau_Dt(z,t,Tobs,ys,log10Mmin,log10Mmax,nMs,nzLs)  # mass-independent: once per (t,z)
+    dn_detec = vd3Ndet_lens_mu_Dt_dtdzdm1(t,z,mass_1s,pz,pm1,pm2,R0,norm_m1,H0,Om0,Tobs,snr_th,detectorSn,fmin_detect,fmax_detect,based,log10Mmin,log10Mmax,nMs,nzLs,mu_image,nys,mmin,n_m2,tau_y=tau_y)
     return trapz(dn_detec,mass_1s)
 vd2Ndet_lens_mu_Dt_dtdz = np.vectorize(d2Ndet_lens_mu_Dt_dtdz)
 
